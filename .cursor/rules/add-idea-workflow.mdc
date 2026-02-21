@@ -1,0 +1,107 @@
+---
+description: Workflow for ideas and projects - "add idea" or "create project"
+alwaysApply: true
+---
+
+# Idea & Project Workflows
+
+## "Add Idea" Workflow
+
+When the user says **"add idea"** (or similar phrases like "new idea", "capture idea"):
+
+### Step 1: Enrich and Plan
+
+1. Take the user's raw idea and expand it:
+   - Identify the core concept
+   - Add relevant context and potential applications
+   - Outline implementation considerations
+2. Present an enriched plan to the user for review before proceeding
+
+### Step 2: Document the Idea
+
+After user approval:
+
+1. Create a new file in `easy_life_with_ai/ideas/` directory
+2. Use format: `YYYY-MM-DD-<slug>.md` (e.g., `2026-02-21-api-caching.md`)
+3. Structure:
+
+```markdown
+# [Idea Title]
+
+**Date:** YYYY-MM-DD
+**Status:** Draft | In Progress | Project | Archived
+
+## Summary
+Brief one-liner description.
+
+## Details
+Expanded explanation of the idea.
+
+## Potential Benefits
+- Benefit 1
+- Benefit 2
+
+## Implementation Notes
+Technical considerations or next steps.
+
+## Open Questions
+- Question 1
+- Question 2
+```
+
+### Step 3: Clarify
+
+Ask follow-up questions to refine the idea.
+
+---
+
+## "Create Project" Workflow
+
+When the user says **"create project"**, **"make this a project"**, or **"build this idea"**:
+
+### Step 1: Select or Confirm Idea
+
+1. If no idea specified, list ideas from `easy_life_with_ai/ideas/` and ask which one
+2. Review the idea document to understand scope
+
+### Step 2: Create Project Folder
+
+1. Create a new folder in `easy_life_with_ai/` named after the project (kebab-case)
+   - Example: `easy_life_with_ai/morning-tech-report/`
+2. Structure the project:
+
+```
+easy_life_with_ai/<project-name>/
+├── README.md           # Project overview, setup, usage
+├── requirements.txt    # Dependencies (if Python)
+└── <main-script>       # Core implementation
+```
+
+### Step 3: Implement
+
+1. Build the core functionality
+2. Test it works
+3. Document setup and usage in README.md
+
+### Step 4: Update Idea Status
+
+Update the original idea file's status to `Project` and add a link:
+
+```markdown
+**Status:** Project
+**Project:** [easy_life_with_ai/<project-name>/](../project-name/)
+```
+
+---
+
+## Project Structure
+
+```
+easy_life_with_ai/
+├── ideas/                    # All ideas (markdown files)
+│   └── YYYY-MM-DD-<slug>.md
+├── <project-name>/           # Each project gets its own folder
+│   ├── README.md
+│   └── ...
+└── .cursor/rules/            # Cursor rules
+```
