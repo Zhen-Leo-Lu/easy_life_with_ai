@@ -4,9 +4,9 @@ Make life easier with AI — a collection of practical AI-powered tools for dail
 
 ## 🌐 Try It Now
 
-**👉 [Launch Web App](https://huggingface.co/spaces/leodoggy/easy_life_with_ai)** — No setup required!
+**👉 [Launch Web App](https://huggingface.co/spaces/zhen-leo-lu/easy_life_with_ai)** — No setup required!
 
-[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/leodoggy/easy_life_with_ai)
+[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/zhen-leo-lu/easy_life_with_ai)
 
 ## 🛠️ Tools
 
