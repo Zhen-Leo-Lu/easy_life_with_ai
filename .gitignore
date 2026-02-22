@@ -1,2 +1,5 @@
 .env
 ideas/daily_reports/
+.gradio/
+.env
+webapp/.env

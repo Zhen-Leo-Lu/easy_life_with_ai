@@ -2,17 +2,29 @@
 """
 Easy Life with AI — Web App
 A collection of simple AI tools to make life easier.
-Uses local Ollama for AI inference.
+Uses Groq API for fast AI inference.
 """
 
 import gradio as gr
 import random
 import requests
 import feedparser
+import os
 from datetime import datetime, timedelta
+from pathlib import Path
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "llama3.2"
+# Load .env file if it exists
+env_file = Path(__file__).parent / ".env"
+if env_file.exists():
+    for line in env_file.read_text().strip().split("\n"):
+        if "=" in line and not line.startswith("#"):
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip())
+
+# Groq API Configuration
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+MODEL = "llama-3.1-8b-instant"  # Fast and free on Groq
 
 # RSS Feeds for Morning Tech Report
 RSS_FEEDS = [
@@ -22,25 +34,32 @@ RSS_FEEDS = [
     {"name": "Ars Technica", "url": "https://feeds.arstechnica.com/arstechnica/technology-lab", "category": "tech"},
 ]
 
-def query_ollama(prompt):
-    """Query local Ollama instance."""
-    print(f"[DEBUG] Querying Ollama with prompt length: {len(prompt)}")
+def query_llm(prompt):
+    """Query Groq API for fast inference."""
+    if not GROQ_API_KEY:
+        return "❌ Error: GROQ_API_KEY not set. Get a free key at https://console.groq.com"
+    print(f"[DEBUG] Querying Groq with prompt length: {len(prompt)}")
     try:
         response = requests.post(
-            OLLAMA_URL,
-            json={"model": MODEL, "prompt": prompt, "stream": False},
-            timeout=120
+            GROQ_URL,
+            headers={
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 1024,
+                "temperature": 0.7
+            },
+            timeout=60
         )
         print(f"[DEBUG] Response status: {response.status_code}")
         response.raise_for_status()
-        result = response.json().get("response", "No response")
+        result = response.json()["choices"][0]["message"]["content"]
         print(f"[DEBUG] Got response length: {len(result)}")
         return result
-    except requests.exceptions.ConnectionError:
-        print("[DEBUG] Connection error!")
-        return "❌ Error: Ollama is not running. Start it with: `brew services start ollama`"
     except requests.exceptions.Timeout:
-        print("[DEBUG] Timeout!")
         return "❌ Error: Request timed out. Try again."
     except Exception as e:
         print(f"[DEBUG] Error: {e}")
@@ -85,7 +104,7 @@ Rules:
 
 Start with "Imagine..." or "You know how..." """
 
-    explanation = query_ollama(prompt)
+    explanation = query_llm(prompt)
     return f"## 🧒 {topic.upper()}\n\n{explanation}"
 
 def eli5_random():
@@ -112,7 +131,7 @@ Original email:
 
 Rewritten email:"""
 
-    return query_ollama(prompt)
+    return query_llm(prompt)
 
 def gift_idea_generator(person_info):
     if not person_info.strip():
@@ -125,7 +144,7 @@ def gift_idea_generator(person_info):
 Format each as:
 🎁 **Gift Name** ($price range) - Why it's perfect"""
 
-    return query_ollama(prompt)
+    return query_llm(prompt)
 
 def recipe_from_fridge(ingredients):
     if not ingredients.strip():
@@ -139,7 +158,7 @@ Suggest 3 easy recipes I can make. For each:
 - Quick steps (5 or fewer)
 - Time to cook"""
 
-    return query_ollama(prompt)
+    return query_llm(prompt)
 
 # ============================================
 # Morning Tech Report
@@ -194,7 +213,7 @@ Format your response as:
 Keep it concise and actionable."""
 
     print("[DEBUG] Analyzing with Ollama...")
-    analysis = query_ollama(prompt)
+    analysis = query_llm(prompt)
     
     # Build the report
     date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -362,8 +381,8 @@ with gr.Blocks(title="Easy Life with AI") as app:
 # Launch
 if __name__ == "__main__":
     print("Starting Easy Life with AI...")
-    print("Testing Ollama connection...")
-    test = query_ollama("Say hi")
-    print(f"Ollama test: {test[:50]}...")
+    print("Testing Groq API connection...")
+    test = query_llm("Say hi in 3 words")
+    print(f"Groq test: {test[:50]}...")
     print("\nLaunching Gradio app...")
     app.launch(server_name="0.0.0.0", server_port=7860, show_error=True)
