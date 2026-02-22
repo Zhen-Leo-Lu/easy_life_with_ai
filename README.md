@@ -12,9 +12,9 @@ Make life easier with AI — a collection of practical AI-powered tools for dail
 
 | Tool | What it does |
 |------|--------------|
-| 🌅 **Morning Tech Report** | AI-curated tech news, trends & predictions |
-| 📊 **Market Update** | Financial market updates by date range, asset class & region |
-| 🌤️ **Weather Forecast** | 15-day forecast, severe weather alerts & tips |
+| 🌤️ **Weather Forecast** | 7-day forecast, severe weather alerts & AI tips (10 US cities) |
+| 📊 **Market Update** | Indices, top movers & sectors (US, Europe, Asia-Pacific) |
+| 🌅 **Morning Tech Report** | AI-curated tech news, trends & signals |
 | 🧒 **ELI5** | Complex concepts explained like you're 5 |
 
 ## 💻 Run Locally
@@ -61,10 +61,11 @@ python app.py
 
 ```
 easy_life_with_ai/
-├── webapp/                 # Web app (uses Groq API)
-├── morning_tech_report/    # CLI (uses local Ollama - no API key!)
-├── eli5/                   # CLI (uses local Ollama - no API key!)
-├── financial_market/       # Financial market data module (uses Yahoo Finance)
+├── webapp/                 # Web app (Groq API + Open-Meteo + Yahoo Finance)
+├── morning_tech_report/    # CLI (uses local Ollama)
+├── eli5/                   # CLI (uses local Ollama)
+├── financial_market/       # Market data module
+├── weather/                # Weather data module
 └── Ideas/                  # Idea pipeline
 ```
 

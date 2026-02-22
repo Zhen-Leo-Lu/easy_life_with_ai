@@ -305,17 +305,10 @@ def generate_market_update(date_range, asset_class, region):
     report_parts = []
     
     # Header
-    report_parts.append("# 📊 Financial Market Update")
-    report_parts.append(f"**Period:** {start_date.strftime('%b %d')} - {end_date.strftime('%b %d, %Y')} ({date_range})")
-    report_parts.append(f"**Focus:** {asset_class} | {region}")
-    report_parts.append("")
-    report_parts.append("---")
-    report_parts.append("")
+    report_parts.append(f"## 📊 {asset_class} — {region} ({date_range})")
     
     # Market Indices
-    report_parts.append("## 📈 Market Indices")
     indices = MARKET_INDICES.get(region, MARKET_INDICES["US"])
-    
     index_data = []
     for ticker, name in indices.items():
         data = get_ticker_data(ticker, start_date, end_date)
@@ -324,20 +317,16 @@ def generate_market_update(date_range, asset_class, region):
             index_data.append(data)
     
     if index_data:
-        report_parts.append("| Index | Current | Change |")
-        report_parts.append("|-------|---------|--------|")
+        report_parts.append("### 📈 Indices")
+        report_parts.append("| Index | Price | Change |")
+        report_parts.append("|-------|-------|--------|")
         for idx in index_data:
-            price_fmt = f"${idx['current']:,.2f}" if idx['current'] > 100 else f"{idx['current']:.2f}"
-            report_parts.append(f"| **{idx['name']}** | {price_fmt} | {format_pct_change(idx['pct_change'])} |")
-    else:
-        report_parts.append("*Unable to fetch index data*")
+            price_fmt = f"${idx['current']:,.0f}" if idx['current'] > 100 else f"{idx['current']:.2f}"
+            report_parts.append(f"| {idx['name']} | {price_fmt} | {format_pct_change(idx['pct_change'])} |")
+        report_parts.append("")
     
-    report_parts.append("")
-    
-    # Top Movers
-    report_parts.append("## 🚀 Top Movers")
+    # Top Movers (compact: side by side)
     tickers = ASSET_TICKERS.get(asset_class, ASSET_TICKERS["Stocks"])
-    
     movers = []
     for ticker in tickers:
         data = get_ticker_data(ticker, start_date, end_date)
@@ -347,23 +336,21 @@ def generate_market_update(date_range, asset_class, region):
     if movers:
         sorted_movers = sorted(movers, key=lambda x: x["pct_change"], reverse=True)
         
-        report_parts.append("### 📈 Top Gainers")
-        for m in sorted_movers[:5]:
-            report_parts.append(f"- **{m['ticker']}**: {format_pct_change(m['pct_change'])} (${m['current']:.2f})")
+        report_parts.append("### 🚀 Top Movers")
+        report_parts.append("| 📈 Gainers | | 📉 Losers | |")
+        report_parts.append("|------------|---|-----------|---|")
         
+        losers = sorted_movers[-3:][::-1]
+        for i in range(3):
+            g = sorted_movers[i] if i < len(sorted_movers) else None
+            l = losers[i] if i < len(losers) else None
+            g_str = f"{g['ticker']} {format_pct_change(g['pct_change'])}" if g else ""
+            l_str = f"{l['ticker']} {format_pct_change(l['pct_change'])}" if l else ""
+            report_parts.append(f"| {g_str} | | {l_str} | |")
         report_parts.append("")
-        report_parts.append("### 📉 Top Losers")
-        for m in sorted_movers[-5:][::-1]:
-            report_parts.append(f"- **{m['ticker']}**: {format_pct_change(m['pct_change'])} (${m['current']:.2f})")
-    else:
-        report_parts.append("*Unable to fetch mover data*")
     
-    report_parts.append("")
-    
-    # Sector Performance (only for US Stocks)
+    # Sector Performance (compact, only for US Stocks)
     if asset_class == "Stocks" and region == "US":
-        report_parts.append("## 🏭 Sector Performance")
-        
         sectors = []
         for ticker, name in SECTOR_ETFS.items():
             data = get_ticker_data(ticker, start_date, end_date)
@@ -373,16 +360,11 @@ def generate_market_update(date_range, asset_class, region):
         
         if sectors:
             sorted_sectors = sorted(sectors, key=lambda x: x["pct_change"], reverse=True)
-            report_parts.append("| Sector | Change |")
-            report_parts.append("|--------|--------|")
-            for s in sorted_sectors:
-                report_parts.append(f"| {s['name']} | {format_pct_change(s['pct_change'])} |")
-        else:
-            report_parts.append("*Unable to fetch sector data*")
+            report_parts.append("### 🏭 Sectors")
+            sector_line = " • ".join([f"{s['name'][:4]} {format_pct_change(s['pct_change'])}" for s in sorted_sectors[:5]])
+            report_parts.append(sector_line)
     
-    report_parts.append("")
-    report_parts.append("---")
-    report_parts.append(f"*Data from Yahoo Finance | Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}*")
+    report_parts.append(f"\n*Yahoo Finance • {datetime.now().strftime('%H:%M')}*")
     
     return "\n".join(report_parts)
 
@@ -507,77 +489,60 @@ def generate_weather_report(location):
     alerts = fetch_weather_alerts(lat, lon)
     
     report_parts = []
-    
-    # Header
-    report_parts.append(f"# 🌤️ Weather Forecast: {location}")
-    report_parts.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    report_parts.append("")
-    report_parts.append("---")
-    report_parts.append("")
-    
-    # Alerts section
-    if alerts:
-        report_parts.append("## ⚠️ Active Weather Alerts")
-        for alert in alerts:
-            severity_emoji = "🔴" if alert["severity"] in ["Extreme", "Severe"] else "🟡"
-            report_parts.append(f"{severity_emoji} **{alert['event']}**")
-            if alert["headline"]:
-                report_parts.append(f"   {alert['headline']}")
-        report_parts.append("")
-        report_parts.append("---")
-        report_parts.append("")
-    
-    # 15-day forecast table
-    report_parts.append("## 📅 15-Day Forecast")
-    report_parts.append("")
-    report_parts.append("| Date | Conditions | High | Low | Precip | Wind |")
-    report_parts.append("|------|------------|------|-----|--------|------|")
-    
     daily = forecast.get("daily", {})
     dates = daily.get("time", [])
     weather_codes = daily.get("weather_code", [])
     temp_max = daily.get("temperature_2m_max", [])
     temp_min = daily.get("temperature_2m_min", [])
-    precip = daily.get("precipitation_sum", [])
     precip_prob = daily.get("precipitation_probability_max", [])
-    wind = daily.get("wind_speed_10m_max", [])
+    
+    # Header with today's highlight
+    today_code = weather_codes[0] if weather_codes else 0
+    today_emoji, today_cond = WEATHER_CODES.get(today_code, ("❓", "Unknown"))
+    today_high = f"{temp_max[0]:.0f}°F" if temp_max else "N/A"
+    today_low = f"{temp_min[0]:.0f}°F" if temp_min else "N/A"
+    
+    report_parts.append(f"## 🌤️ {location}")
+    report_parts.append(f"**Today:** {today_emoji} {today_cond} | High {today_high} | Low {today_low}")
+    
+    # Alerts (compact)
+    if alerts:
+        alert_text = " • ".join([f"⚠️ {a['event']}" for a in alerts[:2]])
+        report_parts.append(f"\n{alert_text}")
+    
+    report_parts.append("")
+    
+    # 7-day compact forecast
+    report_parts.append("### 📅 7-Day Forecast")
+    report_parts.append("| Day | Weather | High/Low | Rain |")
+    report_parts.append("|-----|---------|----------|------|")
     
     forecast_summary_lines = []
-    for i in range(min(15, len(dates))):
+    for i in range(min(7, len(dates))):
         date_obj = datetime.strptime(dates[i], "%Y-%m-%d")
-        date_str = date_obj.strftime("%a %m/%d")
+        date_str = date_obj.strftime("%a")
         
         code = weather_codes[i] if i < len(weather_codes) else 0
         emoji, condition = WEATHER_CODES.get(code, ("❓", "Unknown"))
+        short_cond = condition[:12]
         
-        high = f"{temp_max[i]:.0f}°F" if i < len(temp_max) else "N/A"
-        low = f"{temp_min[i]:.0f}°F" if i < len(temp_min) else "N/A"
-        
-        precip_val = precip[i] if i < len(precip) else 0
+        high = f"{temp_max[i]:.0f}°" if i < len(temp_max) else "-"
+        low = f"{temp_min[i]:.0f}°" if i < len(temp_min) else "-"
         prob_val = precip_prob[i] if i < len(precip_prob) else 0
         precip_str = f"{prob_val}%" if prob_val > 0 else "-"
         
-        wind_val = f"{wind[i]:.0f} mph" if i < len(wind) else "N/A"
-        
-        report_parts.append(f"| {date_str} | {emoji} {condition} | {high} | {low} | {precip_str} | {wind_val} |")
-        
-        # Build summary for AI tips
-        if i < 7:
-            forecast_summary_lines.append(f"{date_str}: {condition}, High {high}, Low {low}, {prob_val}% precip chance")
+        report_parts.append(f"| {date_str} | {emoji} {short_cond} | {high}/{low} | {precip_str} |")
+        forecast_summary_lines.append(f"{date_str}: {condition}, {high}/{low}, {prob_val}% rain")
     
     report_parts.append("")
-    report_parts.append("---")
-    report_parts.append("")
     
-    # AI Tips
-    report_parts.append("## 💡 Weather Tips")
+    # AI Tips (compact)
+    report_parts.append("### 💡 Tips")
     forecast_summary = "\n".join(forecast_summary_lines)
     tips = generate_weather_tips(forecast_summary, alerts)
     report_parts.append(tips)
     
-    report_parts.append("")
-    report_parts.append("---")
-    report_parts.append(f"*Data from Open-Meteo & NWS | Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}*")
+    report_parts.append(f"\n*Open-Meteo & NWS • {datetime.now().strftime('%H:%M')}*")
     
     return "\n".join(report_parts)
 
@@ -585,53 +550,128 @@ def generate_weather_report(location):
 # Build the UI
 # ============================================
 
-with gr.Blocks(title="Easy Life with AI") as app:
+custom_theme = gr.themes.Base(
+    font=gr.themes.GoogleFont("Inter"),
+    font_mono=gr.themes.GoogleFont("IBM Plex Mono"),
+    primary_hue="blue",
+    secondary_hue="slate",
+).set(
+    body_text_size="md",
+    button_large_text_size="lg",
+    button_large_text_weight="600",
+)
+
+with gr.Blocks(title="Easy Life with AI", theme=custom_theme, css="""
+    .markdown-text { font-size: 15px !important; line-height: 1.5 !important; }
+    h1 { font-size: 1.8em !important; font-weight: 700 !important; margin: 0.3em 0 !important; }
+    h2 { font-size: 1.3em !important; font-weight: 600 !important; margin: 0.4em 0 !important; }
+    h3 { font-size: 1.1em !important; font-weight: 600 !important; margin: 0.3em 0 !important; }
+    p, li { font-size: 14px !important; line-height: 1.5 !important; margin: 0.3em 0 !important; }
+    table { font-size: 13px !important; margin: 0.5em 0 !important; }
+    td, th { padding: 4px 8px !important; }
+    hr { margin: 0.5em 0 !important; }
+    .gr-button { font-size: 15px !important; }
+    .output-markdown { max-height: 70vh; overflow-y: auto; }
+    .compact-card { background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%); 
+                    border-radius: 12px; padding: 15px; margin: 8px 0; }
+""") as app:
     
     # HOME PAGE
     with gr.Tab("🏠 Home"):
         gr.Markdown("""
-        # 🚀 Easy Life with AI
-        
-        ### Simple AI tools to make your daily life easier
-        
-        **Powered by local Ollama** — Your data stays on your machine!
-        
-        Choose a tool from the tabs above 👆
+        <div style="text-align: center; padding: 10px 0;">
+            <h1 style="font-size: 2em; margin: 0;">🚀 Easy Life with AI</h1>
+            <p style="color: #666; margin: 5px 0;">Simple AI tools for your daily life</p>
+        </div>
         """)
         
         with gr.Row():
             with gr.Column():
                 gr.Markdown("""
-                ### 🌅 Morning Tech Report
-                AI-curated tech news, trends, and predictions.
-                Start your day informed!
+                <div style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); border-radius: 12px; padding: 15px; height: 100%;">
+                    <h3 style="margin: 0 0 8px 0;">🌤️ Weather Forecast</h3>
+                    <p style="margin: 0; font-size: 13px;">15-day forecast • Severe alerts • AI tips<br>10 major US cities</p>
+                </div>
                 """)
-            
             with gr.Column():
                 gr.Markdown("""
-                ### 🧒 ELI5 — Explain Like I'm 5
-                Learn complex concepts explained simply.
-                Click "Surprise Me!" for random topics!
+                <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 12px; padding: 15px; height: 100%;">
+                    <h3 style="margin: 0 0 8px 0;">📊 Market Update</h3>
+                    <p style="margin: 0; font-size: 13px;">Indices • Top movers • Sectors<br>US, Europe, Asia-Pacific</p>
+                </div>
                 """)
         
         with gr.Row():
             with gr.Column():
                 gr.Markdown("""
-                ### 📊 Market Update
-                Financial market updates by date range,
-                asset class, and region.
+                <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 15px; height: 100%;">
+                    <h3 style="margin: 0 0 8px 0;">🌅 Tech Report</h3>
+                    <p style="margin: 0; font-size: 13px;">AI-curated news • Trends • Signals<br>From top tech sources</p>
+                </div>
                 """)
             with gr.Column():
                 gr.Markdown("""
-                ### 🌤️ Weather Forecast
-                15-day forecast, severe weather alerts,
-                and practical tips for your area.
+                <div style="background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); border-radius: 12px; padding: 15px; height: 100%;">
+                    <h3 style="margin: 0 0 8px 0;">🧒 ELI5</h3>
+                    <p style="margin: 0; font-size: 13px;">Complex concepts made simple<br>Random topics & custom queries</p>
+                </div>
                 """)
         
         gr.Markdown("""
-        ---
-        📖 [View Source Code](https://github.com/Zhen-Leo-Lu/easy_life_with_ai)
+        <div style="text-align: center; padding: 10px 0; color: #888; font-size: 12px;">
+            <a href="https://github.com/Zhen-Leo-Lu/easy_life_with_ai" target="_blank">GitHub</a> • Groq API • Open-Meteo • Yahoo Finance
+        </div>
         """)
+    
+    # WEATHER PAGE
+    with gr.Tab("🌤️ Weather"):
+        gr.Markdown("# 🌤️ Weather Forecast\n15-day forecast with alerts and tips!")
+        
+        with gr.Row():
+            location_dd = gr.Dropdown(
+                choices=list(LOCATIONS.keys()),
+                value="New York City",
+                label="Select Location"
+            )
+        
+        weather_btn = gr.Button("🌤️ Get Weather Forecast", variant="primary", size="lg")
+        output_weather = gr.Markdown(label="Weather Forecast")
+        
+        weather_btn.click(
+            fn=generate_weather_report,
+            inputs=[location_dd],
+            outputs=output_weather
+        )
+    
+    # MARKET UPDATE PAGE
+    with gr.Tab("📊 Market"):
+        gr.Markdown("# 📊 Financial Market Update\nTrack market performance across asset classes and regions!")
+        
+        with gr.Row():
+            date_range_dd = gr.Dropdown(
+                choices=list(DATE_RANGE_OPTIONS.keys()),
+                value="1 Week",
+                label="Date Range"
+            )
+            asset_class_dd = gr.Dropdown(
+                choices=list(ASSET_TICKERS.keys()),
+                value="Stocks",
+                label="Asset Class"
+            )
+            region_dd = gr.Dropdown(
+                choices=list(MARKET_INDICES.keys()),
+                value="US",
+                label="Region"
+            )
+        
+        market_btn = gr.Button("📊 Get Market Update", variant="primary", size="lg")
+        output_market = gr.Markdown(label="Market Update")
+        
+        market_btn.click(
+            fn=generate_market_update,
+            inputs=[date_range_dd, asset_class_dd, region_dd],
+            outputs=output_market
+        )
     
     # MORNING TECH REPORT PAGE
     with gr.Tab("🌅 Tech Report"):
@@ -664,56 +704,6 @@ with gr.Blocks(title="Easy Life with AI") as app:
         random_btn.click(fn=eli5_random, outputs=output_eli5)
         custom_btn.click(fn=eli5_custom, inputs=topic_input, outputs=output_eli5)
         topic_input.submit(fn=eli5_custom, inputs=topic_input, outputs=output_eli5)
-    
-    # MARKET UPDATE PAGE
-    with gr.Tab("📊 Market"):
-        gr.Markdown("# 📊 Financial Market Update\nTrack market performance across asset classes and regions!")
-        
-        with gr.Row():
-            date_range_dd = gr.Dropdown(
-                choices=list(DATE_RANGE_OPTIONS.keys()),
-                value="1 Week",
-                label="Date Range"
-            )
-            asset_class_dd = gr.Dropdown(
-                choices=list(ASSET_TICKERS.keys()),
-                value="Stocks",
-                label="Asset Class"
-            )
-            region_dd = gr.Dropdown(
-                choices=list(MARKET_INDICES.keys()),
-                value="US",
-                label="Region"
-            )
-        
-        market_btn = gr.Button("📊 Get Market Update", variant="primary", size="lg")
-        output_market = gr.Markdown(label="Market Update")
-        
-        market_btn.click(
-            fn=generate_market_update,
-            inputs=[date_range_dd, asset_class_dd, region_dd],
-            outputs=output_market
-        )
-    
-    # WEATHER PAGE
-    with gr.Tab("🌤️ Weather"):
-        gr.Markdown("# 🌤️ Weather Forecast\n15-day forecast with alerts and tips!")
-        
-        with gr.Row():
-            location_dd = gr.Dropdown(
-                choices=list(LOCATIONS.keys()),
-                value="New York City",
-                label="Select Location"
-            )
-        
-        weather_btn = gr.Button("🌤️ Get Weather Forecast", variant="primary", size="lg")
-        output_weather = gr.Markdown(label="Weather Forecast")
-        
-        weather_btn.click(
-            fn=generate_weather_report,
-            inputs=[location_dd],
-            outputs=output_weather
-        )
 
 # Launch
 if __name__ == "__main__":
