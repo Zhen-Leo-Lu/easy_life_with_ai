@@ -7,7 +7,6 @@ Make life easier with AI — a collection of practical AI-powered tools for dail
 **👉 [Launch Web App](https://huggingface.co/spaces/leodoggy/easy_life_with_ai)** — No setup required!
 
 [![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/leodoggy/easy_life_with_ai)
-[![Gradio](https://img.shields.io/badge/Gradio-Web_App-orange)](https://huggingface.co/spaces/leodoggy/easy_life_with_ai)
 
 ## 🛠️ Tools
 
@@ -21,47 +20,51 @@ Make life easier with AI — a collection of practical AI-powered tools for dail
 
 ## 💻 Run Locally
 
-Want to run it on your own machine? 
+### Option 1: CLI Tools (No API key needed!)
+
+Uses **Ollama** — free, runs 100% on your machine.
 
 ```bash
-# Clone the repo
-git clone https://github.com/Zhen-Leo-Lu/easy_life_with_ai.git
-cd easy_life_with_ai/webapp
+# Install Ollama (one-time)
+brew install ollama
+brew services start ollama
+ollama pull llama3.2
 
-# Install dependencies
-pip install -r requirements.txt
+# Run Morning Tech Report
+cd morning_tech_report
+pip install feedparser
+python morning_tech_report.py
 
-# Set your Groq API key (free at https://console.groq.com)
-echo "GROQ_API_KEY=your-key-here" > .env
-
-# Launch
-python app.py
-# Open http://localhost:7860
+# Run ELI5
+cd eli5
+python eli5.py
 ```
 
-### CLI Tools (with local Ollama)
+### Option 2: Web App (Local)
+
+Requires a free Groq API key from [console.groq.com](https://console.groq.com)
 
 ```bash
-# Morning Tech Report (requires Ollama)
-cd morning_tech_report && pip install feedparser && python morning_tech_report.py
-
-# ELI5 (requires Ollama)
-cd eli5 && python eli5.py
+cd webapp
+pip install -r requirements.txt
+echo "GROQ_API_KEY=your-key-here" > .env
+python app.py
+# Open http://localhost:7860
 ```
 
 ## 🎯 Philosophy
 
 - **Practical** — Solves real daily problems
-- **Simple** — One click to use, easy to customize
-- **Free** — No subscriptions required
+- **Simple** — One click to use
+- **Free** — No subscriptions, local AI option available
 
 ## 📁 Project Structure
 
 ```
 easy_life_with_ai/
-├── webapp/                 # Web app (Groq API)
-├── morning_tech_report/    # CLI: Daily tech news (Ollama)
-├── eli5/                   # CLI: Random concept explainer (Ollama)
+├── webapp/                 # Web app (uses Groq API)
+├── morning_tech_report/    # CLI (uses local Ollama - no API key!)
+├── eli5/                   # CLI (uses local Ollama - no API key!)
 └── Ideas/                  # Idea pipeline
 ```
 
