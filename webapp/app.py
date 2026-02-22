@@ -117,51 +117,6 @@ def eli5_custom(topic):
     return eli5_explain(topic)
 
 # ============================================
-# Quick Tools
-# ============================================
-
-def email_tone_fixer(email_text):
-    if not email_text.strip():
-        return "Please paste your email!"
-    
-    prompt = f"""Rewrite this email to be professional, polite, and clear. 
-Keep the same meaning but fix any awkward or aggressive tone.
-
-Original email:
-{email_text}
-
-Rewritten email:"""
-
-    return query_llm(prompt)
-
-def gift_idea_generator(person_info):
-    if not person_info.strip():
-        return "Please describe the person!"
-    
-    prompt = f"""Based on this description, suggest 5 thoughtful gift ideas with brief explanations:
-
-{person_info}
-
-Format each as:
-🎁 **Gift Name** ($price range) - Why it's perfect"""
-
-    return query_llm(prompt)
-
-def recipe_from_fridge(ingredients):
-    if not ingredients.strip():
-        return "Please list your ingredients!"
-    
-    prompt = f"""I have these ingredients: {ingredients}
-
-Suggest 3 easy recipes I can make. For each:
-🍳 **Recipe Name**
-- Ingredients needed (mark if I'm missing any)
-- Quick steps (5 or fewer)
-- Time to cook"""
-
-    return query_llm(prompt)
-
-# ============================================
 # Morning Tech Report
 # ============================================
 
@@ -467,31 +422,12 @@ with gr.Blocks(title="Easy Life with AI") as app:
         with gr.Row():
             with gr.Column():
                 gr.Markdown("""
-                ### ✉️ Email Tone Fixer
-                Turn awkward or angry emails into 
-                professional, polite messages.
-                """)
-            
-            with gr.Column():
-                gr.Markdown("""
-                ### 🎁 Gift Idea Generator
-                Get thoughtful gift suggestions based on
-                the person's interests and your budget.
-                """)
-        
-        with gr.Row():
-            with gr.Column():
-                gr.Markdown("""
-                ### 🍳 Recipe from Fridge
-                Tell us what's in your fridge,
-                get instant recipe ideas!
-                """)
-            with gr.Column():
-                gr.Markdown("""
                 ### 📊 Market Update
                 Financial market updates by date range,
                 asset class, and region.
                 """)
+            with gr.Column():
+                gr.Markdown("")
         
         gr.Markdown("""
         ---
@@ -529,48 +465,6 @@ with gr.Blocks(title="Easy Life with AI") as app:
         random_btn.click(fn=eli5_random, outputs=output_eli5)
         custom_btn.click(fn=eli5_custom, inputs=topic_input, outputs=output_eli5)
         topic_input.submit(fn=eli5_custom, inputs=topic_input, outputs=output_eli5)
-    
-    # EMAIL FIXER PAGE
-    with gr.Tab("✉️ Email Fixer"):
-        gr.Markdown("# ✉️ Email Tone Fixer\nTurn awkward emails into professional ones!")
-        
-        email_input = gr.Textbox(
-            label="Paste your email draft",
-            placeholder="Paste your email here...",
-            lines=8
-        )
-        fix_btn = gr.Button("✨ Make it Professional", variant="primary")
-        output_email = gr.Markdown(label="Fixed Email")
-        
-        fix_btn.click(fn=email_tone_fixer, inputs=email_input, outputs=output_email)
-    
-    # GIFT IDEAS PAGE
-    with gr.Tab("🎁 Gift Ideas"):
-        gr.Markdown("# 🎁 Gift Idea Generator\nThoughtful gifts without the stress!")
-        
-        gift_input = gr.Textbox(
-            label="Describe the person",
-            placeholder="e.g., Mom, 60 years old, likes gardening and cooking, budget $50",
-            lines=3
-        )
-        gift_btn = gr.Button("🎁 Get Ideas", variant="primary")
-        output_gift = gr.Markdown(label="Gift Suggestions")
-        
-        gift_btn.click(fn=gift_idea_generator, inputs=gift_input, outputs=output_gift)
-    
-    # RECIPES PAGE
-    with gr.Tab("🍳 Recipes"):
-        gr.Markdown("# 🍳 Recipe from Fridge\nWhat's for dinner? Let's find out!")
-        
-        recipe_input = gr.Textbox(
-            label="What's in your fridge?",
-            placeholder="e.g., chicken, broccoli, rice, soy sauce, garlic",
-            lines=2
-        )
-        recipe_btn = gr.Button("🍳 Get Recipes", variant="primary")
-        output_recipe = gr.Markdown(label="Recipe Ideas")
-        
-        recipe_btn.click(fn=recipe_from_fridge, inputs=recipe_input, outputs=output_recipe)
     
     # MARKET UPDATE PAGE
     with gr.Tab("📊 Market"):

@@ -15,9 +15,6 @@ Make life easier with AI — a collection of practical AI-powered tools for dail
 | 🌅 **Morning Tech Report** | AI-curated tech news, trends & predictions |
 | 📊 **Market Update** | Financial market updates by date range, asset class & region |
 | 🧒 **ELI5** | Complex concepts explained like you're 5 |
-| ✉️ **Email Tone Fixer** | Turn awkward emails into professional ones |
-| 🎁 **Gift Idea Generator** | Thoughtful gift suggestions |
-| 🍳 **Recipe from Fridge** | Meals from your ingredients |
 
 ## 💻 Run Locally
 
