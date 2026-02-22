@@ -10,6 +10,7 @@ import random
 import requests
 import feedparser
 import os
+import yfinance as yf
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -242,6 +243,195 @@ Keep it concise and actionable."""
     return report
 
 # ============================================
+# Financial Market Update
+# ============================================
+
+# Market indices by region
+MARKET_INDICES = {
+    "US": {
+        "^GSPC": "S&P 500",
+        "^IXIC": "Nasdaq",
+        "^DJI": "Dow Jones",
+        "^VIX": "VIX",
+    },
+    "Europe": {
+        "^STOXX50E": "Euro Stoxx 50",
+        "^FTSE": "FTSE 100",
+        "^GDAXI": "DAX",
+        "^FCHI": "CAC 40",
+    },
+    "Asia-Pacific": {
+        "^N225": "Nikkei 225",
+        "^HSI": "Hang Seng",
+        "000001.SS": "Shanghai Composite",
+        "^AXJO": "ASX 200",
+    },
+    "Global": {
+        "^GSPC": "S&P 500",
+        "^STOXX50E": "Euro Stoxx 50",
+        "^N225": "Nikkei 225",
+        "^VIX": "VIX",
+    },
+}
+
+# Sector ETFs
+SECTOR_ETFS = {
+    "XLK": "Technology",
+    "XLF": "Financials",
+    "XLV": "Healthcare",
+    "XLE": "Energy",
+    "XLY": "Consumer Disc.",
+    "XLP": "Consumer Staples",
+    "XLI": "Industrials",
+    "XLB": "Materials",
+    "XLU": "Utilities",
+    "XLRE": "Real Estate",
+}
+
+# Asset class tickers
+ASSET_TICKERS = {
+    "Stocks": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK-B", "JPM", "V"],
+    "Bonds": ["TLT", "IEF", "SHY", "AGG", "BND"],
+    "Commodities": ["GC=F", "SI=F", "CL=F", "NG=F", "GLD", "SLV"],
+    "Crypto": ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "ADA-USD"],
+    "Forex": ["EURUSD=X", "GBPUSD=X", "USDJPY=X", "DX-Y.NYB"],
+}
+
+DATE_RANGE_OPTIONS = {
+    "1 Day": 1,
+    "1 Week": 7,
+    "1 Month": 30,
+    "3 Months": 90,
+    "1 Year": 365,
+}
+
+def get_ticker_data(ticker, start_date, end_date):
+    """Fetch data for a single ticker."""
+    try:
+        stock = yf.Ticker(ticker)
+        hist = stock.history(start=start_date, end=end_date)
+        
+        if hist.empty or len(hist) < 1:
+            return None
+        
+        start_price = hist['Close'].iloc[0]
+        end_price = hist['Close'].iloc[-1]
+        
+        if start_price == 0:
+            return None
+        
+        pct_change = ((end_price - start_price) / start_price) * 100
+        
+        return {
+            "ticker": ticker,
+            "current": end_price,
+            "pct_change": pct_change,
+        }
+    except Exception as e:
+        print(f"Error fetching {ticker}: {e}")
+        return None
+
+def format_pct_change(pct):
+    """Format percentage change with color indicator."""
+    if pct > 0:
+        return f"🟢 +{pct:.2f}%"
+    elif pct < 0:
+        return f"🔴 {pct:.2f}%"
+    return f"⚪ {pct:.2f}%"
+
+def generate_market_update(date_range, asset_class, region):
+    """Generate financial market update report."""
+    print(f"[DEBUG] Generating market update: {date_range}, {asset_class}, {region}")
+    
+    days = DATE_RANGE_OPTIONS.get(date_range, 7)
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days)
+    
+    report_parts = []
+    
+    # Header
+    report_parts.append("# 📊 Financial Market Update")
+    report_parts.append(f"**Period:** {start_date.strftime('%b %d')} - {end_date.strftime('%b %d, %Y')} ({date_range})")
+    report_parts.append(f"**Focus:** {asset_class} | {region}")
+    report_parts.append("")
+    report_parts.append("---")
+    report_parts.append("")
+    
+    # Market Indices
+    report_parts.append("## 📈 Market Indices")
+    indices = MARKET_INDICES.get(region, MARKET_INDICES["US"])
+    
+    index_data = []
+    for ticker, name in indices.items():
+        data = get_ticker_data(ticker, start_date, end_date)
+        if data:
+            data["name"] = name
+            index_data.append(data)
+    
+    if index_data:
+        report_parts.append("| Index | Current | Change |")
+        report_parts.append("|-------|---------|--------|")
+        for idx in index_data:
+            price_fmt = f"${idx['current']:,.2f}" if idx['current'] > 100 else f"{idx['current']:.2f}"
+            report_parts.append(f"| **{idx['name']}** | {price_fmt} | {format_pct_change(idx['pct_change'])} |")
+    else:
+        report_parts.append("*Unable to fetch index data*")
+    
+    report_parts.append("")
+    
+    # Top Movers
+    report_parts.append("## 🚀 Top Movers")
+    tickers = ASSET_TICKERS.get(asset_class, ASSET_TICKERS["Stocks"])
+    
+    movers = []
+    for ticker in tickers:
+        data = get_ticker_data(ticker, start_date, end_date)
+        if data:
+            movers.append(data)
+    
+    if movers:
+        sorted_movers = sorted(movers, key=lambda x: x["pct_change"], reverse=True)
+        
+        report_parts.append("### 📈 Top Gainers")
+        for m in sorted_movers[:5]:
+            report_parts.append(f"- **{m['ticker']}**: {format_pct_change(m['pct_change'])} (${m['current']:.2f})")
+        
+        report_parts.append("")
+        report_parts.append("### 📉 Top Losers")
+        for m in sorted_movers[-5:][::-1]:
+            report_parts.append(f"- **{m['ticker']}**: {format_pct_change(m['pct_change'])} (${m['current']:.2f})")
+    else:
+        report_parts.append("*Unable to fetch mover data*")
+    
+    report_parts.append("")
+    
+    # Sector Performance (only for US Stocks)
+    if asset_class == "Stocks" and region == "US":
+        report_parts.append("## 🏭 Sector Performance")
+        
+        sectors = []
+        for ticker, name in SECTOR_ETFS.items():
+            data = get_ticker_data(ticker, start_date, end_date)
+            if data:
+                data["name"] = name
+                sectors.append(data)
+        
+        if sectors:
+            sorted_sectors = sorted(sectors, key=lambda x: x["pct_change"], reverse=True)
+            report_parts.append("| Sector | Change |")
+            report_parts.append("|--------|--------|")
+            for s in sorted_sectors:
+                report_parts.append(f"| {s['name']} | {format_pct_change(s['pct_change'])} |")
+        else:
+            report_parts.append("*Unable to fetch sector data*")
+    
+    report_parts.append("")
+    report_parts.append("---")
+    report_parts.append(f"*Data from Yahoo Finance | Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}*")
+    
+    return "\n".join(report_parts)
+
+# ============================================
 # Build the UI
 # ============================================
 
@@ -297,7 +487,11 @@ with gr.Blocks(title="Easy Life with AI") as app:
                 get instant recipe ideas!
                 """)
             with gr.Column():
-                gr.Markdown("")
+                gr.Markdown("""
+                ### 📊 Market Update
+                Financial market updates by date range,
+                asset class, and region.
+                """)
         
         gr.Markdown("""
         ---
@@ -377,6 +571,36 @@ with gr.Blocks(title="Easy Life with AI") as app:
         output_recipe = gr.Markdown(label="Recipe Ideas")
         
         recipe_btn.click(fn=recipe_from_fridge, inputs=recipe_input, outputs=output_recipe)
+    
+    # MARKET UPDATE PAGE
+    with gr.Tab("📊 Market"):
+        gr.Markdown("# 📊 Financial Market Update\nTrack market performance across asset classes and regions!")
+        
+        with gr.Row():
+            date_range_dd = gr.Dropdown(
+                choices=list(DATE_RANGE_OPTIONS.keys()),
+                value="1 Week",
+                label="Date Range"
+            )
+            asset_class_dd = gr.Dropdown(
+                choices=list(ASSET_TICKERS.keys()),
+                value="Stocks",
+                label="Asset Class"
+            )
+            region_dd = gr.Dropdown(
+                choices=list(MARKET_INDICES.keys()),
+                value="US",
+                label="Region"
+            )
+        
+        market_btn = gr.Button("📊 Get Market Update", variant="primary", size="lg")
+        output_market = gr.Markdown(label="Market Update")
+        
+        market_btn.click(
+            fn=generate_market_update,
+            inputs=[date_range_dd, asset_class_dd, region_dd],
+            outputs=output_market
+        )
 
 # Launch
 if __name__ == "__main__":

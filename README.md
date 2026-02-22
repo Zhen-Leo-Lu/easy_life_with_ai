@@ -13,6 +13,7 @@ Make life easier with AI — a collection of practical AI-powered tools for dail
 | Tool | What it does |
 |------|--------------|
 | 🌅 **Morning Tech Report** | AI-curated tech news, trends & predictions |
+| 📊 **Market Update** | Financial market updates by date range, asset class & region |
 | 🧒 **ELI5** | Complex concepts explained like you're 5 |
 | ✉️ **Email Tone Fixer** | Turn awkward emails into professional ones |
 | 🎁 **Gift Idea Generator** | Thoughtful gift suggestions |
@@ -65,6 +66,7 @@ easy_life_with_ai/
 ├── webapp/                 # Web app (uses Groq API)
 ├── morning_tech_report/    # CLI (uses local Ollama - no API key!)
 ├── eli5/                   # CLI (uses local Ollama - no API key!)
+├── financial_market/       # Financial market data module (uses Yahoo Finance)
 └── Ideas/                  # Idea pipeline
 ```
 
