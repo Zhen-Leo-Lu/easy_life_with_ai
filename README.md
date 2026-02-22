@@ -4,9 +4,10 @@ Make life easier with AI — a collection of practical AI-powered tools for dail
 
 ## What's Inside
 
-| Project | Description |
-|---------|-------------|
-| [Morning Tech Report](./morning_tech_report/) | Wake up to AI-curated tech news, trends, and predictions |
+| Project | Description | Usage |
+|---------|-------------|-------|
+| [Morning Tech Report](./morning_tech_report/) | Wake up to AI-curated tech news and predictions | `python morning_tech_report.py` |
+| [ELI5](./eli5/) | Random complex concepts explained like you're 5 | `python eli5.py` |
 
 ## Philosophy
 
