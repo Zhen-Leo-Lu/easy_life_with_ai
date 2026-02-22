@@ -8,10 +8,19 @@ Uses local Ollama for AI inference.
 import gradio as gr
 import random
 import requests
-import json
+import feedparser
+from datetime import datetime, timedelta
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL = "llama3.2"
+
+# RSS Feeds for Morning Tech Report
+RSS_FEEDS = [
+    {"name": "MIT Tech Review", "url": "https://www.technologyreview.com/feed/", "category": "tech"},
+    {"name": "TechCrunch AI", "url": "https://techcrunch.com/category/artificial-intelligence/feed/", "category": "ai"},
+    {"name": "Hacker News", "url": "https://hnrss.org/frontpage", "category": "tech"},
+    {"name": "Ars Technica", "url": "https://feeds.arstechnica.com/arstechnica/technology-lab", "category": "tech"},
+]
 
 def query_ollama(prompt):
     """Query local Ollama instance."""
@@ -133,6 +142,87 @@ Suggest 3 easy recipes I can make. For each:
     return query_ollama(prompt)
 
 # ============================================
+# Morning Tech Report
+# ============================================
+
+def fetch_tech_news():
+    """Fetch articles from RSS feeds."""
+    articles = []
+    for feed_info in RSS_FEEDS:
+        try:
+            feed = feedparser.parse(feed_info["url"])
+            for entry in feed.entries[:5]:
+                articles.append({
+                    "title": entry.get("title", "No title"),
+                    "summary": entry.get("summary", "")[:300],
+                    "link": entry.get("link", ""),
+                    "source": feed_info["name"],
+                    "category": feed_info["category"],
+                })
+        except Exception as e:
+            print(f"Error fetching {feed_info['name']}: {e}")
+    return articles
+
+def generate_tech_report():
+    """Generate the morning tech report."""
+    print("[DEBUG] Fetching tech news...")
+    articles = fetch_tech_news()
+    
+    if not articles:
+        return "❌ Error: Could not fetch news. Check your internet connection."
+    
+    # Prepare article summaries for the prompt
+    article_text = "\n".join([
+        f"• **{a['title']}** ({a['source']})"
+        for a in articles[:15]
+    ])
+    
+    prompt = f"""You are a tech trend analyst. Based on these headlines from today, provide a brief morning briefing:
+
+{article_text}
+
+Format your response as:
+## 🔥 Top 3 Signals Today
+(Most important developments)
+
+## 📈 Pattern Watch  
+(Any emerging trends)
+
+## 💡 Action Item
+(One thing to pay attention to)
+
+Keep it concise and actionable."""
+
+    print("[DEBUG] Analyzing with Ollama...")
+    analysis = query_ollama(prompt)
+    
+    # Build the report
+    date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    
+    report = f"""# 🌅 Morning Tech Report
+**Generated:** {date_str} | **Articles:** {len(articles)}
+
+---
+
+{analysis}
+
+---
+
+## 📰 Today's Headlines
+
+"""
+    # Add headlines by category
+    for cat in ["ai", "tech"]:
+        cat_articles = [a for a in articles if a["category"] == cat]
+        if cat_articles:
+            report += f"### {'🤖 AI' if cat == 'ai' else '💻 Tech'}\n"
+            for a in cat_articles[:5]:
+                report += f"- [{a['title']}]({a['link']}) — {a['source']}\n"
+            report += "\n"
+    
+    return report
+
+# ============================================
 # Build the UI
 # ============================================
 
@@ -153,37 +243,56 @@ with gr.Blocks(title="Easy Life with AI") as app:
         with gr.Row():
             with gr.Column():
                 gr.Markdown("""
+                ### 🌅 Morning Tech Report
+                AI-curated tech news, trends, and predictions.
+                Start your day informed!
+                """)
+            
+            with gr.Column():
+                gr.Markdown("""
                 ### 🧒 ELI5 — Explain Like I'm 5
                 Learn complex concepts explained simply.
                 Click "Surprise Me!" for random topics!
                 """)
-            
+        
+        with gr.Row():
             with gr.Column():
                 gr.Markdown("""
                 ### ✉️ Email Tone Fixer
                 Turn awkward or angry emails into 
                 professional, polite messages.
                 """)
-        
-        with gr.Row():
+            
             with gr.Column():
                 gr.Markdown("""
                 ### 🎁 Gift Idea Generator
                 Get thoughtful gift suggestions based on
                 the person's interests and your budget.
                 """)
-            
+        
+        with gr.Row():
             with gr.Column():
                 gr.Markdown("""
                 ### 🍳 Recipe from Fridge
                 Tell us what's in your fridge,
                 get instant recipe ideas!
                 """)
+            with gr.Column():
+                gr.Markdown("")
         
         gr.Markdown("""
         ---
         📖 [View Source Code](https://github.com/Zhen-Leo-Lu/easy_life_with_ai)
         """)
+    
+    # MORNING TECH REPORT PAGE
+    with gr.Tab("🌅 Tech Report"):
+        gr.Markdown("# 🌅 Morning Tech Report\nAI-curated tech news, trends, and predictions!")
+        
+        report_btn = gr.Button("📰 Generate Today's Report", variant="primary", size="lg")
+        output_report = gr.Markdown(label="Report")
+        
+        report_btn.click(fn=generate_tech_report, outputs=output_report)
     
     # ELI5 PAGE
     with gr.Tab("🧒 ELI5"):
