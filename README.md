@@ -2,80 +2,66 @@
 
 Make life easier with AI — a collection of practical AI-powered tools for daily life.
 
-## 🌐 Launch the Web App
+## 🌐 Try It Now
+
+**👉 [Launch Web App](https://huggingface.co/spaces/leodoggy/easy_life_with_ai)** — No setup required!
+
+[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/leodoggy/easy_life_with_ai)
+[![Gradio](https://img.shields.io/badge/Gradio-Web_App-orange)](https://huggingface.co/spaces/leodoggy/easy_life_with_ai)
+
+## 🛠️ Tools
+
+| Tool | What it does |
+|------|--------------|
+| 🌅 **Morning Tech Report** | AI-curated tech news, trends & predictions |
+| 🧒 **ELI5** | Complex concepts explained like you're 5 |
+| ✉️ **Email Tone Fixer** | Turn awkward emails into professional ones |
+| 🎁 **Gift Idea Generator** | Thoughtful gift suggestions |
+| 🍳 **Recipe from Fridge** | Meals from your ingredients |
+
+## 💻 Run Locally
+
+Want to run it on your own machine? 
 
 ```bash
-cd webapp
+# Clone the repo
+git clone https://github.com/Zhen-Leo-Lu/easy_life_with_ai.git
+cd easy_life_with_ai/webapp
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Set your Groq API key (free at https://console.groq.com)
+echo "GROQ_API_KEY=your-key-here" > .env
+
+# Launch
 python app.py
 # Open http://localhost:7860
 ```
 
-![Web App](https://img.shields.io/badge/Gradio-Web_App-orange) ![Ollama](https://img.shields.io/badge/Ollama-Local_AI-blue)
-
-## 🛠️ Tools
-
-| Tool | What it does | Web | CLI |
-|------|--------------|:---:|:---:|
-| 🌅 **Morning Tech Report** | AI-curated tech news, trends & predictions | ✅ | ✅ |
-| 🧒 **ELI5** | Complex concepts explained like you're 5 | ✅ | ✅ |
-| ✉️ **Email Tone Fixer** | Turn awkward emails into professional ones | ✅ | — |
-| 🎁 **Gift Idea Generator** | Thoughtful gift suggestions | ✅ | — |
-| 🍳 **Recipe from Fridge** | Meals from your ingredients | ✅ | — |
-
-## ⚡ Quick Start
-
-### Option 1: Web App (All tools in one place)
+### CLI Tools (with local Ollama)
 
 ```bash
-# Install dependencies
-cd webapp && pip install -r requirements.txt
-
-# Start Ollama (if not running)
-brew services start ollama
-
-# Launch
-python app.py
-```
-
-Open **http://localhost:7860** and start using the tools!
-
-### Option 2: CLI Tools
-
-```bash
-# Morning Tech Report
+# Morning Tech Report (requires Ollama)
 cd morning_tech_report && pip install feedparser && python morning_tech_report.py
 
-# ELI5
+# ELI5 (requires Ollama)
 cd eli5 && python eli5.py
 ```
-
-## 📋 Requirements
-
-- **Python 3.8+**
-- **Ollama** — Free, local AI. Install from [ollama.ai](https://ollama.ai)
-  ```bash
-  brew install ollama
-  brew services start ollama
-  ollama pull llama3.2
-  ```
 
 ## 🎯 Philosophy
 
 - **Practical** — Solves real daily problems
-- **Local-first** — Your data stays on your machine
-- **Simple** — One command to run, easy to customize
-- **Free** — No API keys, no subscriptions
+- **Simple** — One click to use, easy to customize
+- **Free** — No subscriptions required
 
 ## 📁 Project Structure
 
 ```
 easy_life_with_ai/
-├── webapp/                 # Web app with all tools
-│   ├── app.py
-│   └── requirements.txt
-├── morning_tech_report/    # CLI: Daily tech news
-├── eli5/                   # CLI: Random concept explainer
+├── webapp/                 # Web app (Groq API)
+├── morning_tech_report/    # CLI: Daily tech news (Ollama)
+├── eli5/                   # CLI: Random concept explainer (Ollama)
 └── Ideas/                  # Idea pipeline
 ```
 
