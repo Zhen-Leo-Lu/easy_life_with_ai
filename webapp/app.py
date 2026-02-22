@@ -2,41 +2,60 @@
 """
 Easy Life with AI — Web App
 A collection of simple AI tools to make life easier.
+Uses local Ollama for AI inference.
 """
 
 import gradio as gr
 import random
-from huggingface_hub import InferenceClient
+import requests
+import json
 
-# Initialize HuggingFace client (free inference API)
-client = InferenceClient("HuggingFaceH4/zephyr-7b-beta")
+OLLAMA_URL = "http://localhost:11434/api/generate"
+MODEL = "llama3.2"
+
+def query_ollama(prompt):
+    """Query local Ollama instance."""
+    print(f"[DEBUG] Querying Ollama with prompt length: {len(prompt)}")
+    try:
+        response = requests.post(
+            OLLAMA_URL,
+            json={"model": MODEL, "prompt": prompt, "stream": False},
+            timeout=120
+        )
+        print(f"[DEBUG] Response status: {response.status_code}")
+        response.raise_for_status()
+        result = response.json().get("response", "No response")
+        print(f"[DEBUG] Got response length: {len(result)}")
+        return result
+    except requests.exceptions.ConnectionError:
+        print("[DEBUG] Connection error!")
+        return "❌ Error: Ollama is not running. Start it with: `brew services start ollama`"
+    except requests.exceptions.Timeout:
+        print("[DEBUG] Timeout!")
+        return "❌ Error: Request timed out. Try again."
+    except Exception as e:
+        print(f"[DEBUG] Error: {e}")
+        return f"❌ Error: {str(e)}"
 
 # ============================================
 # ELI5 Tool
 # ============================================
 
 COMPLEX_TOPICS = [
-    # Science
     "quantum entanglement", "black holes", "DNA replication", "how vaccines work",
     "theory of relativity", "photosynthesis", "the Big Bang", "dark matter",
     "evolution by natural selection", "how airplanes fly",
-    # Technology
     "blockchain", "machine learning", "encryption", "how the internet works",
     "cloud computing", "neural networks", "how GPS works", "quantum computing",
-    # Economics
     "inflation", "stock market", "supply and demand", "compound interest",
     "cryptocurrency", "the Federal Reserve", "GDP", "index funds",
-    # Philosophy
     "the trolley problem", "cognitive dissonance", "Plato's cave allegory",
     "the butterfly effect", "Occam's razor", "confirmation bias",
     "the Dunning-Kruger effect", "the prisoner's dilemma",
-    # Space
     "how stars are born", "why is the sky blue", "how seasons work",
     "what is gravity", "the speed of light", "time dilation",
-    # Health
     "how muscles grow", "why we dream", "how memory works",
     "the immune system", "how caffeine works", "why we age",
-    # Everyday
     "how microwaves heat food", "why ice floats", "how touchscreens work",
     "how soap cleans", "how magnets work", "how refrigerators work",
 ]
@@ -57,21 +76,13 @@ Rules:
 
 Start with "Imagine..." or "You know how..." """
 
-    response = client.chat_completion(
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=500,
-        temperature=0.7,
-    )
-    
-    explanation = response.choices[0].message.content
+    explanation = query_ollama(prompt)
     return f"## 🧒 {topic.upper()}\n\n{explanation}"
 
 def eli5_random():
-    """Get a random topic explained."""
     return eli5_explain("", use_random=True)
 
 def eli5_custom(topic):
-    """Explain a custom topic."""
     if not topic.strip():
         return "Please enter a topic!"
     return eli5_explain(topic)
@@ -81,7 +92,6 @@ def eli5_custom(topic):
 # ============================================
 
 def email_tone_fixer(email_text):
-    """Fix the tone of an email to be professional."""
     if not email_text.strip():
         return "Please paste your email!"
     
@@ -93,15 +103,9 @@ Original email:
 
 Rewritten email:"""
 
-    response = client.chat_completion(
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=500,
-        temperature=0.7,
-    )
-    return response.choices[0].message.content
+    return query_ollama(prompt)
 
 def gift_idea_generator(person_info):
-    """Generate gift ideas based on person description."""
     if not person_info.strip():
         return "Please describe the person!"
     
@@ -112,15 +116,9 @@ def gift_idea_generator(person_info):
 Format each as:
 🎁 **Gift Name** ($price range) - Why it's perfect"""
 
-    response = client.chat_completion(
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=500,
-        temperature=0.8,
-    )
-    return response.choices[0].message.content
+    return query_ollama(prompt)
 
 def recipe_from_fridge(ingredients):
-    """Suggest recipes from available ingredients."""
     if not ingredients.strip():
         return "Please list your ingredients!"
     
@@ -132,48 +130,24 @@ Suggest 3 easy recipes I can make. For each:
 - Quick steps (5 or fewer)
 - Time to cook"""
 
-    response = client.chat_completion(
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=600,
-        temperature=0.8,
-    )
-    return response.choices[0].message.content
+    return query_ollama(prompt)
 
 # ============================================
 # Build the UI
 # ============================================
 
-# Custom CSS for better styling
-css = """
-.tool-card {
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    padding: 20px;
-    margin: 10px;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-.tool-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-.header {
-    text-align: center;
-    margin-bottom: 20px;
-}
-"""
-
 with gr.Blocks(title="Easy Life with AI") as app:
     
-    # ============================================
     # HOME PAGE
-    # ============================================
     with gr.Tab("🏠 Home"):
         gr.Markdown("""
         # 🚀 Easy Life with AI
         
         ### Simple AI tools to make your daily life easier
         
-        Choose a tool below to get started:
+        **Powered by local Ollama** — Your data stays on your machine!
+        
+        Choose a tool from the tabs above 👆
         """)
         
         with gr.Row():
@@ -181,9 +155,7 @@ with gr.Blocks(title="Easy Life with AI") as app:
                 gr.Markdown("""
                 ### 🧒 ELI5 — Explain Like I'm 5
                 Learn complex concepts explained simply.
-                Random topics or ask anything!
-                
-                *Click the ELI5 tab above →*
+                Click "Surprise Me!" for random topics!
                 """)
             
             with gr.Column():
@@ -191,8 +163,6 @@ with gr.Blocks(title="Easy Life with AI") as app:
                 ### ✉️ Email Tone Fixer
                 Turn awkward or angry emails into 
                 professional, polite messages.
-                
-                *Click the Email Fixer tab above →*
                 """)
         
         with gr.Row():
@@ -201,8 +171,6 @@ with gr.Blocks(title="Easy Life with AI") as app:
                 ### 🎁 Gift Idea Generator
                 Get thoughtful gift suggestions based on
                 the person's interests and your budget.
-                
-                *Click the Gift Ideas tab above →*
                 """)
             
             with gr.Column():
@@ -210,20 +178,14 @@ with gr.Blocks(title="Easy Life with AI") as app:
                 ### 🍳 Recipe from Fridge
                 Tell us what's in your fridge,
                 get instant recipe ideas!
-                
-                *Click the Recipes tab above →*
                 """)
         
         gr.Markdown("""
         ---
-        💡 **All tools are free and run on AI.** No login required.
-        
         📖 [View Source Code](https://github.com/Zhen-Leo-Lu/easy_life_with_ai)
         """)
     
-    # ============================================
     # ELI5 PAGE
-    # ============================================
     with gr.Tab("🧒 ELI5"):
         gr.Markdown("# 🧒 ELI5 — Explain Like I'm 5\nLearn something new in the simplest way possible!")
         
@@ -246,9 +208,7 @@ with gr.Blocks(title="Easy Life with AI") as app:
         custom_btn.click(fn=eli5_custom, inputs=topic_input, outputs=output_eli5)
         topic_input.submit(fn=eli5_custom, inputs=topic_input, outputs=output_eli5)
     
-    # ============================================
     # EMAIL FIXER PAGE
-    # ============================================
     with gr.Tab("✉️ Email Fixer"):
         gr.Markdown("# ✉️ Email Tone Fixer\nTurn awkward emails into professional ones!")
         
@@ -262,9 +222,7 @@ with gr.Blocks(title="Easy Life with AI") as app:
         
         fix_btn.click(fn=email_tone_fixer, inputs=email_input, outputs=output_email)
     
-    # ============================================
     # GIFT IDEAS PAGE
-    # ============================================
     with gr.Tab("🎁 Gift Ideas"):
         gr.Markdown("# 🎁 Gift Idea Generator\nThoughtful gifts without the stress!")
         
@@ -278,9 +236,7 @@ with gr.Blocks(title="Easy Life with AI") as app:
         
         gift_btn.click(fn=gift_idea_generator, inputs=gift_input, outputs=output_gift)
     
-    # ============================================
     # RECIPES PAGE
-    # ============================================
     with gr.Tab("🍳 Recipes"):
         gr.Markdown("# 🍳 Recipe from Fridge\nWhat's for dinner? Let's find out!")
         
@@ -296,4 +252,9 @@ with gr.Blocks(title="Easy Life with AI") as app:
 
 # Launch
 if __name__ == "__main__":
-    app.launch()
+    print("Starting Easy Life with AI...")
+    print("Testing Ollama connection...")
+    test = query_ollama("Say hi")
+    print(f"Ollama test: {test[:50]}...")
+    print("\nLaunching Gradio app...")
+    app.launch(server_name="0.0.0.0", server_port=7860, show_error=True)
