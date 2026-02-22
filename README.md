@@ -14,6 +14,7 @@ Make life easier with AI — a collection of practical AI-powered tools for dail
 |------|--------------|
 | 🌅 **Morning Tech Report** | AI-curated tech news, trends & predictions |
 | 📊 **Market Update** | Financial market updates by date range, asset class & region |
+| 🌤️ **Weather Forecast** | 15-day forecast, severe weather alerts & tips |
 | 🧒 **ELI5** | Complex concepts explained like you're 5 |
 
 ## 💻 Run Locally

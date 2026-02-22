@@ -387,6 +387,201 @@ def generate_market_update(date_range, asset_class, region):
     return "\n".join(report_parts)
 
 # ============================================
+# Weather Forecast
+# ============================================
+
+# Preset locations with coordinates
+LOCATIONS = {
+    "New York City": {"lat": 40.7128, "lon": -74.0060},
+    "Los Angeles": {"lat": 34.0522, "lon": -118.2437},
+    "Chicago": {"lat": 41.8781, "lon": -87.6298},
+    "Houston": {"lat": 29.7604, "lon": -95.3698},
+    "Miami": {"lat": 25.7617, "lon": -80.1918},
+    "Seattle": {"lat": 47.6062, "lon": -122.3321},
+    "Denver": {"lat": 39.7392, "lon": -104.9903},
+    "Boston": {"lat": 42.3601, "lon": -71.0589},
+    "San Francisco": {"lat": 37.7749, "lon": -122.4194},
+    "Atlanta": {"lat": 33.7490, "lon": -84.3880},
+}
+
+WEATHER_CODES = {
+    0: ("☀️", "Clear sky"),
+    1: ("🌤️", "Mainly clear"),
+    2: ("⛅", "Partly cloudy"),
+    3: ("☁️", "Overcast"),
+    45: ("🌫️", "Foggy"),
+    48: ("🌫️", "Depositing rime fog"),
+    51: ("🌧️", "Light drizzle"),
+    53: ("🌧️", "Moderate drizzle"),
+    55: ("🌧️", "Dense drizzle"),
+    61: ("🌧️", "Slight rain"),
+    63: ("🌧️", "Moderate rain"),
+    65: ("🌧️", "Heavy rain"),
+    66: ("🌨️", "Light freezing rain"),
+    67: ("🌨️", "Heavy freezing rain"),
+    71: ("🌨️", "Slight snow"),
+    73: ("🌨️", "Moderate snow"),
+    75: ("❄️", "Heavy snow"),
+    77: ("🌨️", "Snow grains"),
+    80: ("🌦️", "Slight rain showers"),
+    81: ("🌦️", "Moderate rain showers"),
+    82: ("⛈️", "Violent rain showers"),
+    85: ("🌨️", "Slight snow showers"),
+    86: ("🌨️", "Heavy snow showers"),
+    95: ("⛈️", "Thunderstorm"),
+    96: ("⛈️", "Thunderstorm with slight hail"),
+    99: ("⛈️", "Thunderstorm with heavy hail"),
+}
+
+def fetch_weather_forecast(lat, lon):
+    """Fetch 15-day forecast from Open-Meteo API."""
+    try:
+        url = f"https://api.open-meteo.com/v1/forecast"
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max",
+            "temperature_unit": "fahrenheit",
+            "wind_speed_unit": "mph",
+            "precipitation_unit": "inch",
+            "timezone": "auto",
+            "forecast_days": 15
+        }
+        response = requests.get(url, params=params, timeout=30)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        print(f"Error fetching weather: {e}")
+        return None
+
+def fetch_weather_alerts(lat, lon):
+    """Fetch weather alerts from NWS API (US only)."""
+    try:
+        url = f"https://api.weather.gov/alerts/active?point={lat},{lon}"
+        headers = {"User-Agent": "EasyLifeWithAI/1.0"}
+        response = requests.get(url, headers=headers, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        alerts = []
+        for feature in data.get("features", [])[:5]:
+            props = feature.get("properties", {})
+            alerts.append({
+                "event": props.get("event", "Unknown"),
+                "headline": props.get("headline", ""),
+                "severity": props.get("severity", ""),
+                "description": props.get("description", "")[:500],
+            })
+        return alerts
+    except Exception as e:
+        print(f"Error fetching alerts: {e}")
+        return []
+
+def generate_weather_tips(forecast_summary, alerts):
+    """Generate AI weather tips based on forecast."""
+    alert_text = ""
+    if alerts:
+        alert_text = f"\nActive alerts: {', '.join([a['event'] for a in alerts])}"
+    
+    prompt = f"""Based on this weather forecast, give 3-4 brief, practical tips:
+
+{forecast_summary}{alert_text}
+
+Format as bullet points. Be specific and actionable (e.g., "Bring umbrella Tuesday" not "Be prepared for rain").
+Focus on: what to wear, outdoor activities, travel considerations, health tips."""
+
+    return query_llm(prompt)
+
+def generate_weather_report(location):
+    """Generate complete weather report for a location."""
+    print(f"[DEBUG] Generating weather for: {location}")
+    
+    coords = LOCATIONS.get(location, LOCATIONS["New York City"])
+    lat, lon = coords["lat"], coords["lon"]
+    
+    # Fetch forecast
+    forecast = fetch_weather_forecast(lat, lon)
+    if not forecast:
+        return "❌ Error: Could not fetch weather data. Try again."
+    
+    # Fetch alerts
+    alerts = fetch_weather_alerts(lat, lon)
+    
+    report_parts = []
+    
+    # Header
+    report_parts.append(f"# 🌤️ Weather Forecast: {location}")
+    report_parts.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    report_parts.append("")
+    report_parts.append("---")
+    report_parts.append("")
+    
+    # Alerts section
+    if alerts:
+        report_parts.append("## ⚠️ Active Weather Alerts")
+        for alert in alerts:
+            severity_emoji = "🔴" if alert["severity"] in ["Extreme", "Severe"] else "🟡"
+            report_parts.append(f"{severity_emoji} **{alert['event']}**")
+            if alert["headline"]:
+                report_parts.append(f"   {alert['headline']}")
+        report_parts.append("")
+        report_parts.append("---")
+        report_parts.append("")
+    
+    # 15-day forecast table
+    report_parts.append("## 📅 15-Day Forecast")
+    report_parts.append("")
+    report_parts.append("| Date | Conditions | High | Low | Precip | Wind |")
+    report_parts.append("|------|------------|------|-----|--------|------|")
+    
+    daily = forecast.get("daily", {})
+    dates = daily.get("time", [])
+    weather_codes = daily.get("weather_code", [])
+    temp_max = daily.get("temperature_2m_max", [])
+    temp_min = daily.get("temperature_2m_min", [])
+    precip = daily.get("precipitation_sum", [])
+    precip_prob = daily.get("precipitation_probability_max", [])
+    wind = daily.get("wind_speed_10m_max", [])
+    
+    forecast_summary_lines = []
+    for i in range(min(15, len(dates))):
+        date_obj = datetime.strptime(dates[i], "%Y-%m-%d")
+        date_str = date_obj.strftime("%a %m/%d")
+        
+        code = weather_codes[i] if i < len(weather_codes) else 0
+        emoji, condition = WEATHER_CODES.get(code, ("❓", "Unknown"))
+        
+        high = f"{temp_max[i]:.0f}°F" if i < len(temp_max) else "N/A"
+        low = f"{temp_min[i]:.0f}°F" if i < len(temp_min) else "N/A"
+        
+        precip_val = precip[i] if i < len(precip) else 0
+        prob_val = precip_prob[i] if i < len(precip_prob) else 0
+        precip_str = f"{prob_val}%" if prob_val > 0 else "-"
+        
+        wind_val = f"{wind[i]:.0f} mph" if i < len(wind) else "N/A"
+        
+        report_parts.append(f"| {date_str} | {emoji} {condition} | {high} | {low} | {precip_str} | {wind_val} |")
+        
+        # Build summary for AI tips
+        if i < 7:
+            forecast_summary_lines.append(f"{date_str}: {condition}, High {high}, Low {low}, {prob_val}% precip chance")
+    
+    report_parts.append("")
+    report_parts.append("---")
+    report_parts.append("")
+    
+    # AI Tips
+    report_parts.append("## 💡 Weather Tips")
+    forecast_summary = "\n".join(forecast_summary_lines)
+    tips = generate_weather_tips(forecast_summary, alerts)
+    report_parts.append(tips)
+    
+    report_parts.append("")
+    report_parts.append("---")
+    report_parts.append(f"*Data from Open-Meteo & NWS | Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}*")
+    
+    return "\n".join(report_parts)
+
+# ============================================
 # Build the UI
 # ============================================
 
@@ -427,7 +622,11 @@ with gr.Blocks(title="Easy Life with AI") as app:
                 asset class, and region.
                 """)
             with gr.Column():
-                gr.Markdown("")
+                gr.Markdown("""
+                ### 🌤️ Weather Forecast
+                15-day forecast, severe weather alerts,
+                and practical tips for your area.
+                """)
         
         gr.Markdown("""
         ---
@@ -494,6 +693,26 @@ with gr.Blocks(title="Easy Life with AI") as app:
             fn=generate_market_update,
             inputs=[date_range_dd, asset_class_dd, region_dd],
             outputs=output_market
+        )
+    
+    # WEATHER PAGE
+    with gr.Tab("🌤️ Weather"):
+        gr.Markdown("# 🌤️ Weather Forecast\n15-day forecast with alerts and tips!")
+        
+        with gr.Row():
+            location_dd = gr.Dropdown(
+                choices=list(LOCATIONS.keys()),
+                value="New York City",
+                label="Select Location"
+            )
+        
+        weather_btn = gr.Button("🌤️ Get Weather Forecast", variant="primary", size="lg")
+        output_weather = gr.Markdown(label="Weather Forecast")
+        
+        weather_btn.click(
+            fn=generate_weather_report,
+            inputs=[location_dd],
+            outputs=output_weather
         )
 
 # Launch
