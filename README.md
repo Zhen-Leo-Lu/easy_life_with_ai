@@ -2,66 +2,89 @@
 
 Make life easier with AI — a collection of practical AI-powered tools for daily life.
 
-## 🌐 Try It Online
-
-**[Launch Web App →](./webapp/)** — Run locally or deploy to Hugging Face Spaces for free!
+## 🌐 Launch the Web App
 
 ```bash
-cd webapp && pip install -r requirements.txt && python app.py
+cd webapp
+pip install -r requirements.txt
+python app.py
 # Open http://localhost:7860
 ```
 
-## What's Inside
+![Web App](https://img.shields.io/badge/Gradio-Web_App-orange) ![Ollama](https://img.shields.io/badge/Ollama-Local_AI-blue)
 
-| Tool | Description | Web | CLI |
-|------|-------------|-----|-----|
-| 🧒 **ELI5** | Complex concepts explained simply | ✅ | ✅ |
-| ✉️ **Email Fixer** | Turn awkward emails into professional ones | ✅ | — |
-| 🎁 **Gift Ideas** | Thoughtful gift suggestions | ✅ | — |
-| 🍳 **Recipes** | What to cook with your ingredients | ✅ | — |
-| 📰 **Morning Tech Report** | AI-curated tech news & predictions | — | ✅ |
+## 🛠️ Tools
 
-## Philosophy
+| Tool | What it does | Web | CLI |
+|------|--------------|:---:|:---:|
+| 🌅 **Morning Tech Report** | AI-curated tech news, trends & predictions | ✅ | ✅ |
+| 🧒 **ELI5** | Complex concepts explained like you're 5 | ✅ | ✅ |
+| ✉️ **Email Tone Fixer** | Turn awkward emails into professional ones | ✅ | — |
+| 🎁 **Gift Idea Generator** | Thoughtful gift suggestions | ✅ | — |
+| 🍳 **Recipe from Fridge** | Meals from your ingredients | ✅ | — |
 
-This repo is about turning AI from a buzzword into something that genuinely helps your daily life. Each project is:
+## ⚡ Quick Start
 
-- **Practical** — Solves a real problem
-- **Local-first** — Runs on your machine, respects your privacy
-- **Simple** — Easy to set up and customize
-
-## Getting Started
-
-### Morning Tech Report
-
-Get a daily AI-generated briefing of tech news, patterns, and predictions delivered to your Downloads folder.
+### Option 1: Web App (All tools in one place)
 
 ```bash
-cd morning_tech_report
-pip3 install feedparser
-python3 morning_tech_report.py
+# Install dependencies
+cd webapp && pip install -r requirements.txt
+
+# Start Ollama (if not running)
+brew services start ollama
+
+# Launch
+python app.py
 ```
 
-**Requirements:** [Ollama](https://ollama.ai) (free, runs locally)
+Open **http://localhost:7860** and start using the tools!
 
-[Full setup guide →](./morning_tech_report/README.md)
+### Option 2: CLI Tools
 
-## Ideas Pipeline
+```bash
+# Morning Tech Report
+cd morning_tech_report && pip install feedparser && python morning_tech_report.py
 
-Have an idea for making life easier with AI? The `ideas/` folder tracks concepts from spark to shipped project.
-
-```
-ideas/
-├── 2026-02-21-tech-evolution-predictor.md  → morning_tech_report/
-└── (your next idea here)
+# ELI5
+cd eli5 && python eli5.py
 ```
 
-## Contributing
+## 📋 Requirements
 
-Feel free to:
+- **Python 3.8+**
+- **Ollama** — Free, local AI. Install from [ollama.ai](https://ollama.ai)
+  ```bash
+  brew install ollama
+  brew services start ollama
+  ollama pull llama3.2
+  ```
+
+## 🎯 Philosophy
+
+- **Practical** — Solves real daily problems
+- **Local-first** — Your data stays on your machine
+- **Simple** — One command to run, easy to customize
+- **Free** — No API keys, no subscriptions
+
+## 📁 Project Structure
+
+```
+easy_life_with_ai/
+├── webapp/                 # Web app with all tools
+│   ├── app.py
+│   └── requirements.txt
+├── morning_tech_report/    # CLI: Daily tech news
+├── eli5/                   # CLI: Random concept explainer
+└── Ideas/                  # Idea pipeline
+```
+
+## 🤝 Contributing
+
 - Open issues with ideas for new AI life hacks
 - Submit PRs for improvements
 - Fork and customize for your own needs
 
-## License
+## 📄 License
 
 MIT — use it, modify it, share it.
