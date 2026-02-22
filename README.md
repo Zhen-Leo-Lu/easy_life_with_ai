@@ -2,12 +2,24 @@
 
 Make life easier with AI — a collection of practical AI-powered tools for daily life.
 
+## 🌐 Try It Online
+
+**[Launch Web App →](./webapp/)** — Run locally or deploy to Hugging Face Spaces for free!
+
+```bash
+cd webapp && pip install -r requirements.txt && python app.py
+# Open http://localhost:7860
+```
+
 ## What's Inside
 
-| Project | Description | Usage |
-|---------|-------------|-------|
-| [Morning Tech Report](./morning_tech_report/) | Wake up to AI-curated tech news and predictions | `python morning_tech_report.py` |
-| [ELI5](./eli5/) | Random complex concepts explained like you're 5 | `python eli5.py` |
+| Tool | Description | Web | CLI |
+|------|-------------|-----|-----|
+| 🧒 **ELI5** | Complex concepts explained simply | ✅ | ✅ |
+| ✉️ **Email Fixer** | Turn awkward emails into professional ones | ✅ | — |
+| 🎁 **Gift Ideas** | Thoughtful gift suggestions | ✅ | — |
+| 🍳 **Recipes** | What to cook with your ingredients | ✅ | — |
+| 📰 **Morning Tech Report** | AI-curated tech news & predictions | — | ✅ |
 
 ## Philosophy
 
