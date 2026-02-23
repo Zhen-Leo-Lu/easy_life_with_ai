@@ -525,13 +525,13 @@ def generate_weather_report(location):
     
     # 7-day compact forecast
     report_parts.append("### 📅 7-Day Forecast")
-    report_parts.append("| Day | Weather | °F (High/Low) | °C (High/Low) | Rain |")
-    report_parts.append("|-----|---------|---------------|---------------|------|")
+    report_parts.append("| Date | Weather | °F (High/Low) | °C (High/Low) | Rain |")
+    report_parts.append("|------|---------|---------------|---------------|------|")
     
     forecast_summary_lines = []
     for i in range(min(7, len(dates))):
         date_obj = datetime.strptime(dates[i], "%Y-%m-%d")
-        date_str = date_obj.strftime("%a")
+        date_str = date_obj.strftime("%a %m/%d")
         
         code = weather_codes[i] if i < len(weather_codes) else 0
         emoji, condition = WEATHER_CODES.get(code, ("❓", "Unknown"))
