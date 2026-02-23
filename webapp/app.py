@@ -496,11 +496,22 @@ def generate_weather_report(location):
     temp_min = daily.get("temperature_2m_min", [])
     precip_prob = daily.get("precipitation_probability_max", [])
     
+    def f_to_c(f):
+        return (f - 32) * 5 / 9
+    
     # Header with today's highlight
     today_code = weather_codes[0] if weather_codes else 0
     today_emoji, today_cond = WEATHER_CODES.get(today_code, ("❓", "Unknown"))
-    today_high = f"{temp_max[0]:.0f}°F" if temp_max else "N/A"
-    today_low = f"{temp_min[0]:.0f}°F" if temp_min else "N/A"
+    if temp_max:
+        today_high_f = temp_max[0]
+        today_high = f"{today_high_f:.0f}°F ({f_to_c(today_high_f):.0f}°C)"
+    else:
+        today_high = "N/A"
+    if temp_min:
+        today_low_f = temp_min[0]
+        today_low = f"{today_low_f:.0f}°F ({f_to_c(today_low_f):.0f}°C)"
+    else:
+        today_low = "N/A"
     
     report_parts.append(f"## 🌤️ {location}")
     report_parts.append(f"**Today:** {today_emoji} {today_cond} | High {today_high} | Low {today_low}")
@@ -514,8 +525,8 @@ def generate_weather_report(location):
     
     # 7-day compact forecast
     report_parts.append("### 📅 7-Day Forecast")
-    report_parts.append("| Day | Weather | High/Low | Rain |")
-    report_parts.append("|-----|---------|----------|------|")
+    report_parts.append("| Day | Weather | °F (High/Low) | °C (High/Low) | Rain |")
+    report_parts.append("|-----|---------|---------------|---------------|------|")
     
     forecast_summary_lines = []
     for i in range(min(7, len(dates))):
@@ -524,15 +535,21 @@ def generate_weather_report(location):
         
         code = weather_codes[i] if i < len(weather_codes) else 0
         emoji, condition = WEATHER_CODES.get(code, ("❓", "Unknown"))
-        short_cond = condition[:12]
+        short_cond = condition[:10]
         
-        high = f"{temp_max[i]:.0f}°" if i < len(temp_max) else "-"
-        low = f"{temp_min[i]:.0f}°" if i < len(temp_min) else "-"
+        if i < len(temp_max) and i < len(temp_min):
+            high_f, low_f = temp_max[i], temp_min[i]
+            high_c, low_c = f_to_c(high_f), f_to_c(low_f)
+            f_str = f"{high_f:.0f}°/{low_f:.0f}°"
+            c_str = f"{high_c:.0f}°/{low_c:.0f}°"
+        else:
+            f_str, c_str = "-", "-"
+        
         prob_val = precip_prob[i] if i < len(precip_prob) else 0
         precip_str = f"{prob_val}%" if prob_val > 0 else "-"
         
-        report_parts.append(f"| {date_str} | {emoji} {short_cond} | {high}/{low} | {precip_str} |")
-        forecast_summary_lines.append(f"{date_str}: {condition}, {high}/{low}, {prob_val}% rain")
+        report_parts.append(f"| {date_str} | {emoji} {short_cond} | {f_str} | {c_str} | {precip_str} |")
+        forecast_summary_lines.append(f"{date_str}: {condition}, {f_str}F, {prob_val}% rain")
     
     report_parts.append("")
     
