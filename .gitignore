@@ -1,5 +1,5 @@
 .env
-ideas/daily_reports/
+_Ideas/daily_reports/
 .gradio/
 .env
 webapp/.env

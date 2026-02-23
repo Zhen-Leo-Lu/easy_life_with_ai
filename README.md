@@ -68,7 +68,7 @@ easy_life_with_ai/
 ├── financial_market/       # Market data module
 ├── weather/                # Weather data module
 ├── ai_feed/                # AI content aggregator (RSS, no API keys)
-└── Ideas/                  # Idea pipeline
+└── _Ideas/                 # Idea pipeline (sorted first)
 ```
 
 ## 🤝 Contributing
