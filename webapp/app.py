@@ -564,6 +564,144 @@ def generate_weather_report(location):
     return "\n".join(report_parts)
 
 # ============================================
+# AI Feed (No API keys needed!)
+# ============================================
+
+AI_FEED_SOURCES = [
+    {"name": "r/MachineLearning", "url": "https://www.reddit.com/r/MachineLearning/.rss", "icon": "🤖"},
+    {"name": "r/artificial", "url": "https://www.reddit.com/r/artificial/.rss", "icon": "🧠"},
+    {"name": "r/LocalLLaMA", "url": "https://www.reddit.com/r/LocalLLaMA/.rss", "icon": "🦙"},
+    {"name": "Hacker News AI", "url": "https://hnrss.org/newest?q=AI+OR+LLM+OR+GPT+OR+machine+learning", "icon": "📰"},
+    {"name": "Lobsters AI", "url": "https://lobste.rs/t/ai.rss", "icon": "🦞"},
+    {"name": "DEV.to AI", "url": "https://dev.to/feed/tag/ai", "icon": "👩‍💻"},
+    {"name": "ArXiv AI", "url": "http://export.arxiv.org/rss/cs.AI", "icon": "📄"},
+]
+
+def extract_score(entry, source_name):
+    """Extract popularity score from RSS entry."""
+    import re
+    score = 0
+    
+    # Reddit: score is in the title or content
+    if "reddit" in source_name.lower() or source_name.startswith("r/"):
+        content = entry.get("content", [{}])[0].get("value", "") if entry.get("content") else ""
+        content += entry.get("summary", "")
+        # Look for "X points" or "X upvotes"
+        match = re.search(r'(\d+)\s*(?:points?|upvotes?)', content, re.I)
+        if match:
+            score = int(match.group(1))
+    
+    # Hacker News: points in title like "[123 points]"
+    elif "hacker" in source_name.lower() or "hn" in source_name.lower():
+        title = entry.get("title", "")
+        match = re.search(r'\[(\d+)\s*points?\]', title, re.I)
+        if match:
+            score = int(match.group(1))
+        # Also check hnrss format
+        content = entry.get("summary", "")
+        match = re.search(r'Points:\s*(\d+)', content)
+        if match:
+            score = int(match.group(1))
+    
+    return score
+
+def fetch_ai_feed(sources_selected):
+    """Fetch AI content from selected RSS sources, sorted by popularity."""
+    all_posts = []
+    source_map = {s["name"]: s for s in AI_FEED_SOURCES}
+    
+    for source_name in sources_selected:
+        source = source_map.get(source_name)
+        if not source:
+            continue
+        try:
+            feed = feedparser.parse(source["url"])
+            for entry in feed.entries[:15]:
+                published = ""
+                if hasattr(entry, "published_parsed") and entry.published_parsed:
+                    published = datetime(*entry.published_parsed[:6]).strftime("%m/%d")
+                elif hasattr(entry, "updated_parsed") and entry.updated_parsed:
+                    published = datetime(*entry.updated_parsed[:6]).strftime("%m/%d")
+                
+                score = extract_score(entry, source_name)
+                title = entry.get("title", "No title")[:100]
+                # Clean HN title format
+                title = title.split(" (Comments)")[0].strip()
+                
+                all_posts.append({
+                    "title": title,
+                    "link": entry.get("link", ""),
+                    "source": source["name"],
+                    "icon": source["icon"],
+                    "date": published,
+                    "score": score,
+                    "summary": entry.get("summary", "")[:300],
+                })
+        except Exception as e:
+            print(f"Error fetching {source['name']}: {e}")
+    
+    # Sort by score (highest first), then by date
+    all_posts.sort(key=lambda x: x["score"], reverse=True)
+    return all_posts
+
+def summarize_ai_trends(posts):
+    """Use LLM to summarize trends from top posts."""
+    if not posts:
+        return ""
+    
+    # Get top posts for summarization
+    top_titles = [p["title"] for p in posts[:15]]
+    titles_text = "\n".join([f"- {t}" for t in top_titles])
+    
+    prompt = f"""Based on these top AI posts from Reddit, Hacker News, and tech sites, identify the main trends in 3-4 bullet points:
+
+{titles_text}
+
+Format:
+🔥 **Trend 1**: Brief description
+🔥 **Trend 2**: Brief description
+(etc.)
+
+Be specific about technologies, models, or topics mentioned. Keep each point to 1 line."""
+    
+    return query_llm(prompt)
+
+def generate_ai_feed(sources_selected):
+    """Generate AI feed report with trending posts and AI summary."""
+    if not sources_selected:
+        return "Please select at least one source."
+    
+    print(f"[DEBUG] Fetching AI feed from: {sources_selected}")
+    posts = fetch_ai_feed(sources_selected)
+    
+    if not posts:
+        return "❌ Could not fetch posts. Try again."
+    
+    report_parts = []
+    report_parts.append("## 🤖 AI Feed — Top Posts")
+    
+    # AI Trend Summary
+    report_parts.append("### 🔥 Trending Topics")
+    trends = summarize_ai_trends(posts)
+    report_parts.append(trends)
+    report_parts.append("")
+    
+    # Top posts sorted by popularity
+    report_parts.append("### 📈 Most Popular")
+    report_parts.append("| Post | Source | Score |")
+    report_parts.append("|------|--------|-------|")
+    
+    for p in posts[:12]:
+        score_str = f"⬆️ {p['score']}" if p['score'] > 0 else "-"
+        title_short = p['title'][:60] + "..." if len(p['title']) > 60 else p['title']
+        report_parts.append(f"| [{title_short}]({p['link']}) | {p['icon']} | {score_str} |")
+    
+    report_parts.append("")
+    report_parts.append(f"*{len(posts)} posts • Updated {datetime.now().strftime('%H:%M')}*")
+    
+    return "\n".join(report_parts)
+
+# ============================================
 # Build the UI
 # ============================================
 
@@ -622,17 +760,28 @@ with gr.Blocks(title="Easy Life with AI", theme=custom_theme, css="""
             with gr.Column():
                 gr.Markdown("""
                 <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 15px; height: 100%;">
-                    <h3 style="margin: 0 0 8px 0;">🌅 Tech Report</h3>
-                    <p style="margin: 0; font-size: 13px;">AI-curated news • Trends • Signals<br>From top tech sources</p>
+                    <h3 style="margin: 0 0 8px 0;">🤖 AI Feed</h3>
+                    <p style="margin: 0; font-size: 13px;">Reddit, HN, Lobsters, ArXiv<br>No API keys needed!</p>
                 </div>
                 """)
             with gr.Column():
                 gr.Markdown("""
                 <div style="background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); border-radius: 12px; padding: 15px; height: 100%;">
+                    <h3 style="margin: 0 0 8px 0;">🌅 Tech Report</h3>
+                    <p style="margin: 0; font-size: 13px;">AI-curated news • Trends<br>From top tech sources</p>
+                </div>
+                """)
+        
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown("""
+                <div style="background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%); border-radius: 12px; padding: 15px; height: 100%;">
                     <h3 style="margin: 0 0 8px 0;">🧒 ELI5</h3>
                     <p style="margin: 0; font-size: 13px;">Complex concepts made simple<br>Random topics & custom queries</p>
                 </div>
                 """)
+            with gr.Column():
+                gr.Markdown("")
         
         gr.Markdown("""
         <div style="text-align: center; padding: 10px 0; color: #888; font-size: 12px;">
@@ -688,6 +837,25 @@ with gr.Blocks(title="Easy Life with AI", theme=custom_theme, css="""
             fn=generate_market_update,
             inputs=[date_range_dd, asset_class_dd, region_dd],
             outputs=output_market
+        )
+    
+    # AI FEED PAGE
+    with gr.Tab("🤖 AI Feed"):
+        gr.Markdown("# 🤖 AI Feed\nLatest AI content from Reddit, HN, Lobsters & more — no API keys!")
+        
+        ai_sources_cb = gr.CheckboxGroup(
+            choices=[s["name"] for s in AI_FEED_SOURCES],
+            value=["r/MachineLearning", "r/LocalLLaMA", "Hacker News AI"],
+            label="Select Sources"
+        )
+        
+        ai_feed_btn = gr.Button("🔄 Fetch AI Feed", variant="primary", size="lg")
+        output_ai_feed = gr.Markdown(label="AI Feed")
+        
+        ai_feed_btn.click(
+            fn=generate_ai_feed,
+            inputs=[ai_sources_cb],
+            outputs=output_ai_feed
         )
     
     # MORNING TECH REPORT PAGE

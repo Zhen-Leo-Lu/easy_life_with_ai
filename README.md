@@ -14,6 +14,7 @@ Make life easier with AI — a collection of practical AI-powered tools for dail
 |------|--------------|
 | 🌤️ **Weather Forecast** | 7-day forecast, severe weather alerts & AI tips (10 US cities) |
 | 📊 **Market Update** | Indices, top movers & sectors (US, Europe, Asia-Pacific) |
+| 🤖 **AI Feed** | Reddit, HN, Lobsters, DEV.to, ArXiv — no API keys! |
 | 🌅 **Morning Tech Report** | AI-curated tech news, trends & signals |
 | 🧒 **ELI5** | Complex concepts explained like you're 5 |
 
@@ -66,6 +67,7 @@ easy_life_with_ai/
 ├── eli5/                   # CLI (uses local Ollama)
 ├── financial_market/       # Market data module
 ├── weather/                # Weather data module
+├── ai_feed/                # AI content aggregator (RSS, no API keys)
 └── Ideas/                  # Idea pipeline
 ```
 
